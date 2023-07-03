@@ -1,16 +1,33 @@
 package com.shop.controller;
 
-
+import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
+import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.shop.dto.LoginFormDTO;
 import com.shop.dto.Result;
+import com.shop.dto.UserDTO;
+import com.shop.entity.User;
 import com.shop.entity.UserInfo;
+import com.shop.mapper.UserMapper;
 import com.shop.service.IUserInfoService;
 import com.shop.service.IUserService;
+import com.shop.utils.JwtHelper;
+import com.shop.utils.RegexUtils;
+import com.shop.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static com.shop.utils.RedisConstants.*;
 
 /**
  * <p>
@@ -29,15 +46,32 @@ public class UserController {
     private IUserService userService;
 
     @Resource
+    private UserMapper userMapper;
+
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Resource
     private IUserInfoService userInfoService;
 
     /**
      * 发送手机验证码
      */
     @PostMapping("code")
-    public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
-        // TODO 发送短信验证码并保存验证码
-        return Result.fail("功能未完成");
+    public Result sendCode(@RequestParam("phone") String phone) {
+        // 1.校验⼿机号是否合法
+        if (RegexUtils.isPhoneInvalid(phone)) {
+            // 2.若不符合，返回错误信息
+            return Result.fail("⼿机号格式错误");
+        }
+        // 3.若符合，⽣成验证码
+        String code = RandomUtil.randomNumbers(6);
+        // 4.保存验证码到redis key-⼿机号 value-验证码 并设置过期时间
+        stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL,
+                TimeUnit.MINUTES);
+        // 5.发送验证码 (要调⽤第三⽅，这⾥不做)
+        log.debug("发送短信验证码：{}", code);
+        return Result.ok();
     }
 
     /**
@@ -47,8 +81,46 @@ public class UserController {
      */
     @PostMapping("/login")
     public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session) {
-        // TODO 实现登录功能
-        return Result.fail("功能未完成");
+        String phone = loginForm.getPhone();
+        String code = loginForm.getCode();
+        // 校验⼿机号
+        if (RegexUtils.isPhoneInvalid(phone)) {
+            return Result.fail("⼿机号格式错误");
+        }
+        // 从redis中校验验证码
+        String cacheCode =
+                stringRedisTemplate.opsForValue().get(LOGIN_CODE_KEY + phone);
+        if (!code.equals(cacheCode)) {
+            return Result.fail("验证码错误");
+        }
+        // 查数据库
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq(StrUtil.isNotBlank(phone), "phone", phone);
+        User user = userService.getOne(queryWrapper);
+        // 判断⽤户是否存在，不存在则创建⼀个
+        if (user == null) {
+            user = createUserWithPhone(phone);
+        }
+        //⽣成token
+        String token = JwtHelper.createToken(user.getId());
+        // 将user转成map后进⾏hash存储,设置有效期
+        UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+        // user转map时，由于id是Long类型，⽽StringRedisTemplate只⽀持String类型，因此需要⾃定义映射规则
+        Map<String, Object> map = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                CopyOptions.create().setIgnoreNullValue(true)
+                        .setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
+        String tokenKey = LOGIN_USER_KEY + token;
+        stringRedisTemplate.opsForHash().putAll(tokenKey, map);
+        stringRedisTemplate.expire(tokenKey, LOGIN_USER_TTL, TimeUnit.SECONDS);
+        // 返回token
+        return Result.ok(token);
+    }
+
+    private User createUserWithPhone(String phone) {
+        User user = new User();
+        user.setPhone(phone);
+        user.setNickName("user_" + IdUtil.nanoId(10));
+        return user;
     }
 
     /**
@@ -64,8 +136,8 @@ public class UserController {
 
     @GetMapping("/me")
     public Result me() {
-        // TODO 获取当前登录的用户并返回
-        return Result.fail("功能未完成");
+        UserDTO userDTO = UserHolder.getUser();
+        return Result.ok(userDTO);
     }
 
     @GetMapping("/info/{id}")
