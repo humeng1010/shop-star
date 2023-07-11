@@ -1,16 +1,18 @@
 package com.shop.service;
 
-import com.shop.entity.ShopType;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shop.dto.Result;
+import com.shop.entity.ShopType;
 
 /**
  * <p>
  * 服务类
  * </p>
  *
- * @author 虎哥
  * @since 2021-12-22
  */
 public interface IShopTypeService extends IService<ShopType> {
+
+    Result queryTypeList();
 
 }

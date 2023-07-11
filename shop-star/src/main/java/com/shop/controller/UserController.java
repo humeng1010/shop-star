@@ -16,13 +16,13 @@ import com.shop.service.IUserInfoService;
 import com.shop.service.IUserService;
 import com.shop.utils.JwtHelper;
 import com.shop.utils.RegexUtils;
+import com.shop.utils.SystemConstants;
 import com.shop.utils.UserHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpSession;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +34,6 @@ import static com.shop.utils.RedisConstants.*;
  * 前端控制器
  * </p>
  *
- * @author 虎哥
  * @since 2021-12-22
  */
 @Slf4j
@@ -80,7 +79,7 @@ public class UserController {
      * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
      */
     @PostMapping("/login")
-    public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session) {
+    public Result login(@RequestBody LoginFormDTO loginForm) {
         String phone = loginForm.getPhone();
         String code = loginForm.getCode();
         // 校验⼿机号
@@ -119,7 +118,7 @@ public class UserController {
     private User createUserWithPhone(String phone) {
         User user = new User();
         user.setPhone(phone);
-        user.setNickName("user_" + IdUtil.nanoId(10));
+        user.setNickName(SystemConstants.USER_NICK_NAME_PREFIX + IdUtil.nanoId(10));
         return user;
     }
 
