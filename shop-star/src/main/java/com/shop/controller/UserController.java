@@ -69,7 +69,7 @@ public class UserController {
         stringRedisTemplate.opsForValue().set(LOGIN_CODE_KEY + phone, code, LOGIN_CODE_TTL,
                 TimeUnit.MINUTES);
         // 5.发送验证码 (要调⽤第三⽅，这⾥不做)
-        log.debug("发送短信验证码：{}", code);
+        log.info("发送短信验证码：{}", code);
         return Result.ok();
     }
 
@@ -128,9 +128,19 @@ public class UserController {
      * @return 无
      */
     @PostMapping("/logout")
-    public Result logout() {
-        // TODO 实现登出功能
-        return Result.fail("功能未完成");
+    public Result logout(@RequestHeader("authorization") String authorization) {
+        UserDTO user = UserHolder.getUser();
+        if (user == null) {
+            return Result.fail("您还未登录");
+        }
+
+        String tokenKey = LOGIN_USER_KEY + authorization;
+        Boolean isSuccess = stringRedisTemplate.delete(tokenKey);
+        if (Boolean.FALSE.equals(isSuccess)) {
+            return Result.fail("退出失败");
+        }
+
+        return Result.ok("退出成功");
     }
 
     @GetMapping("/me")

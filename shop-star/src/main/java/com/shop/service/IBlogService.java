@@ -1,7 +1,8 @@
 package com.shop.service;
 
-import com.shop.entity.Blog;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shop.dto.Result;
+import com.shop.entity.Blog;
 
 /**
  * <p>
@@ -12,4 +13,11 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IBlogService extends IService<Blog> {
 
+    Result queryBlogById(Long id);
+
+    Result queryHotBlog(Integer current);
+
+    Result likeBlog(Long id);
+
+    Result queryBlogLikes(Long id);
 }
