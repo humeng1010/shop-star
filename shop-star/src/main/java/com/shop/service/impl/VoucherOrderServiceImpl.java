@@ -93,7 +93,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             }
             while (true) {
                 try {
-                    log.info("c1消费者准备获取从g1组中获取消息");
+                    // log.info("c1消费者准备获取从g1组中获取消息");
                     //    获取stream消息队列中的订单信息 XREADGROUP GROUP g1 c1 COUNT 1 BLOCK 2000 STREAMS stream.order >
 
                     List<MapRecord<String, Object, Object>> list = stringRedisTemplate
@@ -107,7 +107,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
                     // 判断消息是否获取成功
                     if (list == null || list.isEmpty()) {
                         // 如果获取失败说明没有消息,继续下一次获取
-                        log.info("c1消费者从g1组中 没有获取到 消息");
+                        // log.info("c1消费者从g1组中 没有获取到 消息");
                         continue;
                     }
                     log.info("c1消费者从g1组中 获取到 消息!!! 准备解析该消息");

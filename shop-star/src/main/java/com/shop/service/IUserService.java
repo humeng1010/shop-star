@@ -1,6 +1,7 @@
 package com.shop.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shop.dto.Result;
 import com.shop.entity.User;
 
 /**
@@ -12,4 +13,7 @@ import com.shop.entity.User;
  */
 public interface IUserService extends IService<User> {
 
+    Result sign();
+
+    Result signCount();
 }
