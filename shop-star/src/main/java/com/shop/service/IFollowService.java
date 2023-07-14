@@ -1,7 +1,8 @@
 package com.shop.service;
 
-import com.shop.entity.Follow;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.shop.dto.Result;
+import com.shop.entity.Follow;
 
 /**
  * <p>
@@ -12,4 +13,9 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface IFollowService extends IService<Follow> {
 
+    Result follow(Long id, Boolean isFollow);
+
+    Result isFollow(Long id);
+
+    Result followCommons(Long id);
 }
