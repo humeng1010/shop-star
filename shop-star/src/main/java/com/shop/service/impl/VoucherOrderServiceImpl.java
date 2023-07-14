@@ -24,6 +24,8 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +86,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
         @Override
         public void run() {
+            if (Boolean.FALSE.equals(stringRedisTemplate.hasKey(queueName))) {
+                log.info("redis中没有该stream队列,准备创建");
+                stringRedisTemplate.opsForStream().createGroup(queueName, "g1");
+                log.info("创建stream消息队列成功");
+            }
             while (true) {
                 try {
                     log.info("c1消费者准备获取从g1组中获取消息");
@@ -226,6 +233,10 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         int r = result.intValue();
         //    判断结果是否是0
         if (r != 0) {
+            // 减掉生成id造成的缓存中的销量增加
+            String date = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
+            stringRedisTemplate.opsForValue().decrement("icr:" +
+                    "order" + ":" + date);
             //    不为0 没有购买资格
             String message = null;
             if (r == 1) {

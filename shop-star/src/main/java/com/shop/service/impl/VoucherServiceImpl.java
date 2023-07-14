@@ -13,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -52,11 +54,14 @@ public class VoucherServiceImpl extends ServiceImpl<VoucherMapper, Voucher> impl
         seckillVoucher.setBeginTime(voucher.getBeginTime());
         seckillVoucher.setEndTime(voucher.getEndTime());
         seckillVoucherService.save(seckillVoucher);
-        int ttl = voucher.getEndTime().getSecond() - voucher.getBeginTime().getSecond();
+        LocalDateTime endTime = voucher.getEndTime();
+        LocalDateTime beginTime = voucher.getBeginTime();
+        Duration duration = Duration.between(beginTime, endTime);
+        long ttl = duration.getSeconds();
         //    保存秒杀的库存到redis
+        String key = RedisConstants.SECKILL_STOCK_KEY + voucher.getId();
         stringRedisTemplate
                 .opsForValue()
-                .set(RedisConstants.SECKILL_STOCK_KEY + voucher.getId(), voucher.getStock().toString(), ttl, TimeUnit.SECONDS);
-
+                .set(key, voucher.getStock().toString(), ttl, TimeUnit.SECONDS);
     }
 }
