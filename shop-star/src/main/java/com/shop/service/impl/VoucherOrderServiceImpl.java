@@ -219,7 +219,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private IVoucherOrderService proxy;
 
     @Override
-    // @Transactional 如果这个地方还有事务,会导致事务套事务的情况,这个事务还没有提交,里面的锁就释放掉了,导致还是一人多单!
     public Result seckillVoucher(Long voucherId) {
         //    执行Lua脚本
         Long userId = UserHolder.getUser().getId();
@@ -260,7 +259,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     // 阻塞队列实现异步秒杀
     /*@Override
-    // @Transactional 如果这个地方还有事务,会导致事务套事务的情况,这个事务还没有提交,里面的锁就释放掉了,导致还是一人多单!
     public Result seckillVoucher(Long voucherId) {
         //    执行Lua脚本
         Long userId = UserHolder.getUser().getId();
@@ -303,7 +301,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     }*/
 
     /*@Override
-    // @Transactional 如果这个地方还有事务,会导致事务套事务的情况,这个事务还没有提交,里面的锁就释放掉了,导致还是一人多单!
     public Result seckillVoucher(Long voucherId) {
         if (voucherId != null && voucherId <= 0) {
             return Result.fail("优惠券不存在");
